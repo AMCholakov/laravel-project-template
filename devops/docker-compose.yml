@@ -1,0 +1,61 @@
+version: '3'
+services:
+
+  #PHP Service
+  app:
+    image: alicholakov/laravel-php:1.1
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    user: ${CURRENT_UID}
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: ${SERVICE_TAG}
+    working_dir: ${WORKING_DIR}
+    volumes:
+      - ${PROJECT_DIR}:${WORKING_DIR}
+    networks:
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+    volumes:
+      - ${PROJECT_DIR}:${WORKING_DIR}
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      SERVICE_TAGS: ${SERVICE_TAG}
+      SERVICE_NAME: mysql
+    volumes:
+      - dbdata:/var/lib/mysql/
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
+
+#Volumes
+volumes:
+  dbdata:
+    driver: local
